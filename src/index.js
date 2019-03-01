@@ -158,8 +158,13 @@ SftpClient.prototype.get = function(path, useCompression, encoding, otherOptions
         });
         stream.on('readable', () => {
           this.client.removeListener('error', reject);
-          return resolve(stream);
+          // Ater node V10.0.0, 'readable' takes precedence in controlling the flow,
+          // i.e. 'data' will be emitted only when stream.read() is called.
+          while((stream.read()) !== null) {}
         });
+
+        // Return always the stream, not only when readable event is triggerd.
+        return resolve(stream);
       } catch(err) {
         this.client.removeListener('error', reject);
         return reject(new Error(`Failed get on ${path}: ${err.message}`));
